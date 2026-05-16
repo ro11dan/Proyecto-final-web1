@@ -1,69 +1,124 @@
 <?php
 require_once __DIR__ . '/../config/db.php';
-// Variables para mostrar los errores y para rellenar los campos del formulario
-$error = "";// Variables para mostrar los errores y para rellenar los campos del formulario
-$nombre = ""; // Variable para el nombre del alumno
-$email = "";// Variable para el correo electronico del alumno
 
-//si el formulario se ha enviado (POST)
-if( $_SERVER['REQUEST_METHOD'] == 'POST'){
-    // 1.- Obtener los datos del formulario
-    $nombre = trim($_POST['nombre'] ?? "");
-    $email = trim($_POST['email'] ?? "");
+$error = '';
+$success = '';
 
-    // 2.- Validaciones basicas
-    if($nombre == "" || $email == ""){
-        $error = "Todos los campos son obligatorios";
-    }else if( !filter_var($email, FILTER_VALIDATE_EMAIL)){
-        $error = "El correo electronico no es valido";
-    }else{
-        try{
-                    // 3.- Insertar los datos en la base de datos (Seguros contra inyeccion SQL)
-            $sql = "INSERT INTO alumnos (nombre, email) VALUES (:nombre, :email)";
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre_dueno = trim($_POST['nombre_dueno'] ?? '');
+    $nombre_mascota = trim($_POST['nombre_mascota'] ?? '');
+    $tipo_mascota = $_POST['tipo_mascota'] ?? '';
+    $fecha_cita = $_POST['fecha_cita'] ?? '';
+    $hora_cita = $_POST['hora_cita'] ?? '';
+    $motivo_consulta = trim($_POST['motivo_consulta'] ?? '');
+    $estado = $_POST['estado'] ?? 'pendiente';
+
+    if (!$nombre_dueno || !$nombre_mascota || !$tipo_mascota || !$fecha_cita || !$hora_cita || !$motivo_consulta) {
+        $error = "Todos los campos marcados con * son obligatorios";
+    } else {
+        try {
+            $sql = "INSERT INTO citas (nombre_dueno, nombre_mascota, tipo_mascota, fecha_cita, hora_cita, motivo_consulta, estado) 
+                    VALUES (:nombre_dueno, :nombre_mascota, :tipo_mascota, :fecha_cita, :hora_cita, :motivo_consulta, :estado)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                'nombre' => $nombre, 
-                'email' => $email
-                ]);
-            // Redireccionar a la pagina principal despues de insertar el alumno
+                ':nombre_dueno' => $nombre_dueno,
+                ':nombre_mascota' => $nombre_mascota,
+                ':tipo_mascota' => $tipo_mascota,
+                ':fecha_cita' => $fecha_cita,
+                ':hora_cita' => $hora_cita,
+                ':motivo_consulta' => $motivo_consulta,
+                ':estado' => $estado
+            ]);
             header("Location: index.php");
             exit();
-
-        }catch(PDOException $e){
-            $error = "Error al insertar el alumno: " . $e->getMessage();
-
+        } catch (PDOException $e) {
+            $error = "Error al crear la cita: " . $e->getMessage();
         }
-
     }
-
-}else{
-
 }
-
-
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear alumno</title>
+    <title>🐾 Nueva Cita Veterinaria</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        textarea { min-height: 80px; resize: vertical; }
+        .btn { display: inline-block; padding: 12px 25px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; border: none; cursor: pointer; font-size: 1em; margin: 5px 0; }
+        .btn:hover { background: #2980b9; }
+        .btn-secondary { background: #95a5a6; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #c62828; }
+        .required { color: #e74c3c; }
+    </style>
 </head>
 <body>
-    <h1>Crear alumno</h1>
-    <p><a href="index.php">&lt; Volver</a></p>
-    <?php if($error): ?>
-        <p style="color:red;"><?=  htmlspecialchars($error)?></p>
-    <?php endif; ?>
-    <form method="post">
-        <label for="">Nombre:</label>
-        <input type="text" name="nombre" required id="" value="<?= htmlspecialchars($nombre)?>">
-        <br>
-        <label for="">Correo electronico:</label>
-        <input type="email" name="email" required id="" value="<?= htmlspecialchars($email)?>">
-        <br>
-        <button type="submit">Crear</button>
-
-    </form>
+    <div class="container">
+        <h1>🐾 Nueva Cita Veterinaria</h1>
+        
+        <?php if ($error): ?>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>Nombre del Dueño <span class="required">*</span></label>
+                <input type="text" name="nombre_dueno" value="<?= htmlspecialchars($_POST['nombre_dueno'] ?? '') ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre de la Mascota <span class="required">*</span></label>
+                <input type="text" name="nombre_mascota" value="<?= htmlspecialchars($_POST['nombre_mascota'] ?? '') ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Tipo de Mascota <span class="required">*</span></label>
+                <select name="tipo_mascota" required>
+                    <option value="">-- Seleccionar --</option>
+                    <option value="Perro" <?= ($_POST['tipo_mascota'] ?? '') === 'Perro' ? 'selected' : '' ?>>Perro</option>
+                    <option value="Gato" <?= ($_POST['tipo_mascota'] ?? '') === 'Gato' ? 'selected' : '' ?>>Gato</option>
+                    <option value="Ave" <?= ($_POST['tipo_mascota'] ?? '') === 'Ave' ? 'selected' : '' ?>>Ave</option>
+                    <option value="Roedor" <?= ($_POST['tipo_mascota'] ?? '') === 'Roedor' ? 'selected' : '' ?>>Roedor</option>
+                    <option value="Reptil" <?= ($_POST['tipo_mascota'] ?? '') === 'Reptil' ? 'selected' : '' ?>>Reptil</option>
+                    <option value="Otro" <?= ($_POST['tipo_mascota'] ?? '') === 'Otro' ? 'selected' : '' ?>>Otro</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Fecha de la Cita <span class="required">*</span></label>
+                <input type="date" name="fecha_cita" value="<?= htmlspecialchars($_POST['fecha_cita'] ?? '') ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Hora de la Cita <span class="required">*</span></label>
+                <input type="time" name="hora_cita" value="<?= htmlspecialchars($_POST['hora_cita'] ?? '') ?>" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Motivo de la Consulta <span class="required">*</span></label>
+                <textarea name="motivo_consulta" required><?= htmlspecialchars($_POST['motivo_consulta'] ?? '') ?></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Estado</label>
+                <select name="estado">
+                    <option value="pendiente" <?= ($_POST['estado'] ?? '') === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+                    <option value="atendida" <?= ($_POST['estado'] ?? '') === 'atendida' ? 'selected' : '' ?>>Atendida</option>
+                    <option value="cancelada" <?= ($_POST['estado'] ?? '') === 'cancelada' ? 'selected' : '' ?>>Cancelada</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn">💾 Guardar Cita</button>
+            <a href="index.php" class="btn btn-secondary">← Volver</a>
+        </form>
+    </div>
 </body>
 </html>
